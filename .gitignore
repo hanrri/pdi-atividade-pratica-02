@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+res/*.npz
+res/*.json
+figs/
