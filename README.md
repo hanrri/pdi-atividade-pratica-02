@@ -36,11 +36,14 @@ próprio aluno. A metodologia e a análise dos resultados estão no relatório e
 
 ## Instalação
 
-Baixe o projeto (por `git clone` ou pelo botão *Download ZIP* do GitHub) e entre na pasta:
+Clone o repositório e entre na pasta:
 
 ```bash
-cd codigo
+git clone https://github.com/hanrri/pdi-atividade-pratica-02.git
+cd pdi-atividade-pratica-02
 ```
+
+Também dá para usar o botão *Code → Download ZIP* do GitHub, extrair e entrar na pasta extraída.
 
 Crie e ative um ambiente virtual.
 
