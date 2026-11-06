@@ -98,7 +98,7 @@ cerca de um a dois minutos.
 - No terminal: PSNR, SSIM, tempos de execução e contagens.
 - `res/`: arquivos `.json` com todos os números e três `.npz` com imagens intermediárias
   (cerca de 190 MB no total, podem ser apagados depois).
-- `figs/`: as figuras usadas no relatório.
+- `figs/`: as 15 figuras usadas no relatório.
 
 Os tempos da mediana (A2) variam conforme a máquina. Os demais valores devem ser
 iguais aos do relatório, pois as sementes aleatórias são fixas.
@@ -106,11 +106,10 @@ iguais aos do relatório, pois as sementes aleatórias são fixas.
 ## Ruído sal e pimenta
 
 As imagens com ruído já estão em `res/` (densidades 0,10, 0,25 e 0,40, a partir de
-`fotos/20261105_134410.jpg`). Para gerá-las de novo:
+`fotos/20261105_134410.jpg`). Para gerá-las de novo (os arquivos são gravados em `res/`):
 
 ```bash
 python gerar_sal_pimenta.py fotos/20261105_134410.jpg 1024
-mv referencia_limpa.png sal_pimenta_d*.png res/
 ```
 
 ## Problemas comuns

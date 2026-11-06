@@ -1,9 +1,12 @@
-import numpy as np, time, json, os
+import numpy as np, time, json, os, textwrap
 from PIL import Image, ImageOps
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
+plt.rcParams.update({"font.size": 12})
+DPI = 110
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 FOTOS = os.path.join(BASE, "fotos")
@@ -37,4 +40,6 @@ def salvar_json(obj, nome):
         json.dump(obj, f, indent=2, ensure_ascii=False)
 
 def mostrar(ax, img, titulo, cmap="gray", **kw):
-    ax.imshow(img, cmap=cmap, **kw); ax.set_title(titulo, fontsize=9); ax.axis("off")
+    ax.imshow(img, cmap=cmap, **kw)
+    ax.set_title("\n".join(textwrap.fill(l, 28) for l in titulo.split("\n")), fontsize=13)
+    ax.axis("off")

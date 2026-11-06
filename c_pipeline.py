@@ -36,11 +36,11 @@ if __name__ == "__main__":
     mostrar(ax[0, 2], r["an"], "2) após RRL 7x7", vmin=-5, vmax=25); mostrar(ax[0, 3], r["th"], f"3) top-hat (disco r={R_TH})", vmax=25)
     mostrar(ax[1, 0], r["bw_raw"], f"4) binarização multi-Otsu (t={r['t']:.1f})"); mostrar(ax[1, 1], r["bw_clear"], "5) remoção de objetos da borda")
     mostrar(ax[1, 2], r["bw_fill"], "6) preenchimento de cavidades"); mostrar(ax[1, 3], over, f"7) resultado: {lab.max()} componentes\n(contorno verde, esqueleto vermelho)")
-    plt.tight_layout(); plt.savefig(f"{FIGS}/c_pipeline.png", dpi=70); plt.close()
+    plt.tight_layout(); plt.savefig(f"{FIGS}/c_pipeline.png", dpi=DPI); plt.close()
     fig, ax = plt.subplots(1, 3, figsize=(16, 7))
     mostrar(ax[0], falha, "falha: top-hat+bottom-hat no cinza", vmax=120); mostrar(ax[1], bw_falha, f"Otsu: {100*bw_falha.mean():.0f}% de pixels brancos")
-    ax[2].plot(raios, curva, "o-"); ax[2].set_title("granulometria da máscara final", fontsize=9); ax[2].set_xlabel("raio do disco"); ax[2].set_ylabel("área restante (fração)")
-    plt.tight_layout(); plt.savefig(f"{FIGS}/c_falha_gran.png", dpi=70); plt.close()
+    ax[2].plot(raios, curva, "o-"); ax[2].set_title("granulometria da máscara final", fontsize=13); ax[2].set_xlabel("raio do disco"); ax[2].set_ylabel("área restante (fração)")
+    plt.tight_layout(); plt.savefig(f"{FIGS}/c_falha_gran.png", dpi=DPI); plt.close()
     var_ord = {}
     for nome, o in (("padrão (RRL→top-hat→bin→borda→preenche→abre)", "padrao"), ("top-hat antes do RRL", "tophat_antes_ruido"),
                     ("preenche antes de remover borda", "preencher_antes_borda"), ("abre antes de borda/preenche", "abrir_antes")):

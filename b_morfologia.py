@@ -22,6 +22,13 @@ def dilat_geod(F, G, k):
         D = cv2.dilate(D.astype(np.uint8), cruz).astype(bool) & G
     return D
 
+def erod_geod(F, G, k):
+    cruz = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]], np.uint8)
+    D = F.copy()
+    for _ in range(k):
+        D = cv2.erode(D.astype(np.uint8), cruz).astype(bool) | G
+    return D
+
 if __name__ == "__main__":
     rgb, gray, a = carregar()
     r = executar(a); mask = r["final"]; raw = r["bw_raw"]
@@ -37,13 +44,13 @@ if __name__ == "__main__":
             o = cv2.morphologyEx(mask.astype(np.uint8), op, se).astype(bool)
             mostrar(ax[i, j + 1], o, f"{on} (área={o.sum()}, objs={label(o).max()})")
             tab.append({"SE": sn, "op": on, "area": int(o.sum()), "objetos": int(label(o).max())})
-    plt.tight_layout(); plt.savefig(f"{FIGS}/b1_binaria.png", dpi=70); plt.close()
+    plt.tight_layout(); plt.savefig(f"{FIGS}/b1_binaria.png", dpi=DPI); plt.close()
     fig, ax = plt.subplots(3, 5, figsize=(17, 20))
     for i, (sn, se) in enumerate(ses.items()):
         mostrar(ax[i, 0], g8, f"cinza original\nSE: {sn}")
         for j, (on, op) in enumerate(ops.items()):
             mostrar(ax[i, j + 1], cv2.morphologyEx(g8, op, se), on)
-    plt.tight_layout(); plt.savefig(f"{FIGS}/b1_cinza.png", dpi=70); plt.close()
+    plt.tight_layout(); plt.savefig(f"{FIGS}/b1_cinza.png", dpi=DPI); plt.close()
     res["b1"] = tab
 
     kern = np.array([[-1, -1, 0], [-1, 1, 1], [0, 1, 1]], np.int8)
@@ -68,7 +75,7 @@ if __name__ == "__main__":
     mostrar(ax[1, 1], hull | mask, "fecho convexo (por objeto)")
     mostrar(ax[1, 2], fino, "afinamento")
     mostrar(ax[1, 3], np.dstack([esq, poda, np.zeros_like(esq)]).astype(float), "esqueleto (vermelho) e podado (amarelo)")
-    plt.tight_layout(); plt.savefig(f"{FIGS}/b2_binarios.png", dpi=70); plt.close()
+    plt.tight_layout(); plt.savefig(f"{FIGS}/b2_binarios.png", dpi=DPI); plt.close()
 
     marcador = cv2.erode(mask.astype(np.uint8), el(3)).astype(bool)
     d1, d5, d15 = (dilat_geod(marcador, mask, k) for k in (1, 5, 15))
@@ -94,7 +101,31 @@ if __name__ == "__main__":
     mostrar(ax[0, 2], d5, "k=5"); mostrar(ax[0, 3], rec, f"reconstrução (convergiu em k={k})")
     mostrar(ax[1, 0], abert_comum, "abertura comum (disco 3)"); mostrar(ax[1, 1], tocam, "objetos que tocam a borda")
     mostrar(ax[1, 2], ab_g, "cinza: abertura comum r=8"); mostrar(ax[1, 3], ab_rec, "cinza: abertura por reconstrução")
-    plt.tight_layout(); plt.savefig(f"{FIGS}/b3_reconstrucao.png", dpi=70); plt.close()
+    plt.tight_layout(); plt.savefig(f"{FIGS}/b3_reconstrucao.png", dpi=DPI); plt.close()
+
+    marc_e = cv2.dilate(raw.astype(np.uint8), el(3)).astype(bool)
+    e1, e5 = (erod_geod(marc_e, raw, k_) for k_ in (1, 5))
+    ke = 0; De = marc_e.copy()
+    while True:
+        De2 = erod_geod(De, raw, 1); ke += 1
+        if (De2 == De).all(): break
+        De = De2
+    buracos_e = De & ~raw
+    cruz_ = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]], np.uint8)
+    igual_sk = bool(np.array_equal(De, reconstruction(marc_e.astype(np.uint8), raw.astype(np.uint8), method="erosion", footprint=cruz_).astype(bool)))
+    fech_g = cv2.morphologyEx(g8, cv2.MORPH_CLOSE, el(8))
+    fech_rec = reconstruction(fech_g.astype(float), g8.astype(float), method="erosion")
+    res["b3_erosao"] = {"area_mascara_bruta": int(raw.sum()), "area_marcador": int(marc_e.sum()), "iteracoes_ate_convergir": ke,
+                        "area_reconstruida": int(De.sum()), "pixels_buracos_preenchidos": int(buracos_e.sum()),
+                        "buracos_totais_fill_holes": int((ndi.binary_fill_holes(raw) & ~raw).sum()), "igual_skimage": igual_sk,
+                        "dif_media_fechamento_comum": float(np.abs(fech_g.astype(float) - g8).mean()),
+                        "dif_media_fechamento_reconstrucao": float(np.abs(fech_rec - g8).mean())}
+    fig, ax = plt.subplots(2, 4, figsize=(17, 14))
+    mostrar(ax[0, 0], marc_e, "marcador F (dilatação r=3)"); mostrar(ax[0, 1], e1, "erosão geodésica k=1")
+    mostrar(ax[0, 2], e5, "k=5"); mostrar(ax[0, 3], De, f"reconstrução por erosão (convergiu em k={ke})")
+    mostrar(ax[1, 0], raw, "máscara bruta G"); mostrar(ax[1, 1], cv2.dilate(buracos_e.astype(np.uint8), np.ones((5, 5), np.uint8)), "buracos preenchidos")
+    mostrar(ax[1, 2], fech_g, "cinza: fechamento comum r=8"); mostrar(ax[1, 3], fech_rec, "cinza: fechamento por reconstrução")
+    plt.tight_layout(); plt.savefig(f"{FIGS}/b3_erosao.png", dpi=DPI); plt.close()
 
     grad = cv2.morphologyEx(g8, cv2.MORPH_GRADIENT, np.ones((3, 3), np.uint8))
     th_g = cv2.morphologyEx(g8, cv2.MORPH_TOPHAT, el(15)); bh_g = cv2.morphologyEx(g8, cv2.MORPH_BLACKHAT, el(15))
@@ -112,11 +143,11 @@ if __name__ == "__main__":
     fig, ax = plt.subplots(2, 4, figsize=(17, 14))
     mostrar(ax[0, 0], grad, "gradiente morfológico (3x3)"); mostrar(ax[0, 1], th_g, "top-hat (disco r=15)")
     mostrar(ax[0, 2], bh_g, "bottom-hat (disco r=15)"); mostrar(ax[0, 3], asf, "filtro sequencial alternado (r=1..3)")
-    ax[1, 0].plot(raios, curva_b, "o-"); ax[1, 0].set_title("granulometria binária (área restante)", fontsize=9); ax[1, 0].set_xlabel("raio do disco")
-    ax[1, 1].bar(raios[1:], pec_b); ax[1, 1].set_title("espectro de padrões (binário)", fontsize=9); ax[1, 1].set_xlabel("raio")
-    ax[1, 2].plot(raios, curva_g, "o-"); ax[1, 2].set_title("granulometria em cinza", fontsize=9); ax[1, 2].set_xlabel("raio do disco")
-    ax[1, 3].bar(raios[1:], pec_g); ax[1, 3].set_title("espectro de padrões (cinza)", fontsize=9); ax[1, 3].set_xlabel("raio")
-    plt.tight_layout(); plt.savefig(f"{FIGS}/b4_cinza_granulometria.png", dpi=70); plt.close()
+    ax[1, 0].plot(raios, curva_b, "o-"); ax[1, 0].set_title("granulometria binária (área restante)", fontsize=13); ax[1, 0].set_xlabel("raio do disco")
+    ax[1, 1].bar(raios[1:], pec_b); ax[1, 1].set_title("espectro de padrões (binário)", fontsize=13); ax[1, 1].set_xlabel("raio")
+    ax[1, 2].plot(raios, curva_g, "o-"); ax[1, 2].set_title("granulometria em cinza", fontsize=13); ax[1, 2].set_xlabel("raio do disco")
+    ax[1, 3].bar(raios[1:], pec_g); ax[1, 3].set_title("espectro de padrões (cinza)", fontsize=13); ax[1, 3].set_xlabel("raio")
+    plt.tight_layout(); plt.savefig(f"{FIGS}/b4_cinza_granulometria.png", dpi=DPI); plt.close()
     salvar_json(res, "b.json")
     for k_, v_ in res.items():
         if k_ != "b1": print(k_, {a_: b_ for a_, b_ in v_.items() if not isinstance(b_, list)})
